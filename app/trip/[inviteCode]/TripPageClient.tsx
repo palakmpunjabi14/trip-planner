@@ -110,7 +110,7 @@ export default function TripPageClient({
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "destination_votes" },
-        () => router.refresh()
+        () => router.refresh() // no trip_id filter available on this table, but scoped via channel
       )
       .on(
         "postgres_changes",

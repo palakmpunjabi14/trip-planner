@@ -58,9 +58,6 @@ export default function SummaryTab({
   const isConfirmed = trip.status === "confirmed";
 
   // Pending actions
-  const membersWhoVoted = new Set(
-    destinations.flatMap((d) => d.destination_votes.map(() => "voted"))
-  );
   const membersWithBudget = new Set(budgets.map((b) => b.member_id));
   const membersWithDates = new Set(dateAvailability.map((d) => d.member_id));
 

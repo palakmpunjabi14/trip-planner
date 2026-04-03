@@ -1,10 +1,12 @@
 import CreateTripForm from "@/components/CreateTripForm";
 import JoinTripForm from "@/components/JoinTripForm";
+import AuthError from "@/components/AuthError";
 
 export default function Home() {
   return (
     <div className="flex flex-1 flex-col items-center px-4 py-12 sm:py-16">
       <div className="mx-auto max-w-2xl text-center">
+        <AuthError />
         <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
           Plan your group trip,{" "}
           <span className="text-indigo-600">together.</span>

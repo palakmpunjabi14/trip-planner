@@ -104,7 +104,7 @@ export default function DatesTab({
             .eq("id", toRemove.id);
         }
       } else {
-        await supabase?.from("date_availability").insert({
+        await supabase.from("date_availability").insert({
           trip_id: tripId,
           member_id: currentUserId,
           available_date: dateStr,
@@ -128,7 +128,7 @@ export default function DatesTab({
     }
 
     try {
-      const { error } = await supabase!
+      const { error } = await supabase
         .from("trips")
         .update({
           locked_start_date: lockStart,
@@ -301,7 +301,7 @@ export default function DatesTab({
       </div>
 
       {/* Organizer lock dates */}
-      {isOrganizer && !isLocked && tripStatus !== "planning" && (
+      {isOrganizer && !isLocked && (
         <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-4 space-y-3">
           <h4 className="text-sm font-semibold text-indigo-800">
             Lock Trip Dates (Organizer Only)
