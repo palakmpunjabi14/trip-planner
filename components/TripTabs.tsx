@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-const tabs = ["Members", "Destinations", "Dates", "Summary"] as const;
+const tabs = ["Members", "Destinations", "Budget", "Dates", "Summary"] as const;
 type Tab = (typeof tabs)[number];
 
 export default function TripTabs({

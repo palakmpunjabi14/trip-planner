@@ -7,8 +7,10 @@ import JoinTripBanner from "@/components/JoinTripBanner";
 import TripTabs from "@/components/TripTabs";
 import MembersTab from "@/components/MembersTab";
 import DestinationsTab from "@/components/DestinationsTab";
+import BudgetTab from "@/components/BudgetTab";
 import DatesTab from "@/components/DatesTab";
 import SummaryTab from "@/components/SummaryTab";
+import ProgressBar from "@/components/ProgressBar";
 
 interface Trip {
   id: string;
@@ -52,11 +54,20 @@ interface DateAvail {
   available_date: string;
 }
 
+interface BudgetPref {
+  id: string;
+  trip_id: string;
+  member_id: string;
+  min_budget: number;
+  max_budget: number;
+}
+
 export default function TripPageClient({
   trip: initialTrip,
   members: initialMembers,
   destinations: initialDestinations,
   dateAvailability: initialDateAvailability,
+  budgets: initialBudgets,
   isMember,
   isOrganizer,
   currentUserId,
@@ -67,6 +78,7 @@ export default function TripPageClient({
   members: Member[];
   destinations: Destination[];
   dateAvailability: DateAvail[];
+  budgets: BudgetPref[];
   isMember: boolean;
   isOrganizer: boolean;
   currentUserId: string | null;
@@ -79,6 +91,7 @@ export default function TripPageClient({
   const [members, setMembers] = useState(initialMembers);
   const [destinations, setDestinations] = useState(initialDestinations);
   const [dateAvailability, setDateAvailability] = useState(initialDateAvailability);
+  const [budgets, setBudgets] = useState(initialBudgets);
 
   // Realtime subscriptions
   useEffect(() => {
@@ -106,6 +119,11 @@ export default function TripPageClient({
       )
       .on(
         "postgres_changes",
+        { event: "*", schema: "public", table: "budget_preferences", filter: `trip_id=eq.${trip.id}` },
+        () => router.refresh()
+      )
+      .on(
+        "postgres_changes",
         { event: "*", schema: "public", table: "trips", filter: `id=eq.${trip.id}` },
         () => router.refresh()
       )
@@ -121,6 +139,7 @@ export default function TripPageClient({
   useEffect(() => { setMembers(initialMembers); }, [initialMembers]);
   useEffect(() => { setDestinations(initialDestinations); }, [initialDestinations]);
   useEffect(() => { setDateAvailability(initialDateAvailability); }, [initialDateAvailability]);
+  useEffect(() => { setBudgets(initialBudgets); }, [initialBudgets]);
 
   if (!isMember) {
     return (
@@ -132,26 +151,16 @@ export default function TripPageClient({
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
-      <div className="mb-6">
+      <div className="mb-4">
         <h1 className="text-2xl font-bold text-gray-900">{trip.name}</h1>
-        <div className="mt-1 flex items-center gap-2">
-          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-            trip.status === "confirmed"
-              ? "bg-green-100 text-green-800"
-              : trip.status === "destination_locked"
-              ? "bg-yellow-100 text-yellow-800"
-              : "bg-gray-100 text-gray-800"
-          }`}>
-            {trip.status === "confirmed"
-              ? "Confirmed"
-              : trip.status === "destination_locked"
-              ? "Destination Locked"
-              : "Planning"}
-          </span>
-          <span className="text-sm text-gray-500">
-            {members.length} member{members.length !== 1 ? "s" : ""}
-          </span>
-        </div>
+        <p className="mt-1 text-sm text-gray-500">
+          {members.length} member{members.length !== 1 ? "s" : ""}
+        </p>
+      </div>
+
+      {/* Progress Bar */}
+      <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+        <ProgressBar status={trip.status} />
       </div>
 
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
@@ -167,6 +176,15 @@ export default function TripPageClient({
                     destinations={destinations}
                     lockedDestinationId={trip.locked_destination_id}
                     isOrganizer={isOrganizer}
+                    currentUserId={currentUserId!}
+                  />
+                );
+              case "Budget":
+                return (
+                  <BudgetTab
+                    tripId={trip.id}
+                    budgets={budgets}
+                    members={members}
                     currentUserId={currentUserId!}
                   />
                 );

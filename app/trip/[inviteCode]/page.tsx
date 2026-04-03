@@ -53,12 +53,19 @@ export default async function TripPage({
     .select("*")
     .eq("trip_id", trip.id);
 
+  // Fetch budget preferences
+  const { data: budgets } = await supabase
+    .from("budget_preferences")
+    .select("*")
+    .eq("trip_id", trip.id);
+
   return (
     <TripPageClient
       trip={trip}
       members={members || []}
       destinations={destinations || []}
       dateAvailability={dateAvailability || []}
+      budgets={budgets || []}
       isMember={isMember}
       isOrganizer={isOrganizer}
       currentUserId={user?.id || null}
