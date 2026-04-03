@@ -62,12 +62,11 @@ export default function MembersTab({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">
-          Members ({members.length})
-        </h3>
-        <ShareButton inviteCode={inviteCode} tripName={tripName} />
-      </div>
+      <h3 className="text-lg font-semibold text-gray-900">
+        Members ({members.length})
+      </h3>
+
+      <ShareButton inviteCode={inviteCode} tripName={tripName} />
 
       <div className="space-y-2">
         {members.map((member) => {
