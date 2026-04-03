@@ -168,7 +168,16 @@ export default function TripPageClient({
           {(activeTab) => {
             switch (activeTab) {
               case "Members":
-                return <MembersTab members={members} inviteCode={inviteCode} tripName={trip.name} />;
+                return (
+                  <MembersTab
+                    members={members}
+                    inviteCode={inviteCode}
+                    tripName={trip.name}
+                    budgets={budgets}
+                    dateAvailability={dateAvailability}
+                    tripStatus={trip.status}
+                  />
+                );
               case "Destinations":
                 return (
                   <DestinationsTab
@@ -207,6 +216,8 @@ export default function TripPageClient({
                     trip={trip}
                     members={members}
                     destinations={destinations}
+                    budgets={budgets}
+                    dateAvailability={dateAvailability}
                   />
                 );
             }
