@@ -1,6 +1,8 @@
 "use client";
 
 import { format } from "date-fns";
+import { useState } from "react";
+import toast from "react-hot-toast";
 
 interface Trip {
   id: string;
@@ -39,6 +41,18 @@ interface DateAvail {
   member_id: string;
 }
 
+interface ItineraryActivity {
+  time: string;
+  activity: string;
+  description: string;
+}
+
+interface ItineraryDay {
+  day: number;
+  title: string;
+  activities: ItineraryActivity[];
+}
+
 export default function SummaryTab({
   trip,
   members,
@@ -52,6 +66,9 @@ export default function SummaryTab({
   budgets: BudgetPref[];
   dateAvailability: DateAvail[];
 }) {
+  const [aiLoading, setAiLoading] = useState(false);
+  const [itinerary, setItinerary] = useState<ItineraryDay[] | null>(null);
+
   const lockedDest = destinations.find(
     (d) => d.id === trip.locked_destination_id
   );
@@ -86,6 +103,38 @@ export default function SummaryTab({
       currency: "INR",
       maximumFractionDigits: 0,
     }).format(n);
+
+  const canGenerateItinerary = lockedDest && trip.locked_start_date && trip.locked_end_date;
+
+  const handleGenerateItinerary = async () => {
+    if (!canGenerateItinerary) return;
+
+    setAiLoading(true);
+    setItinerary(null);
+    try {
+      const res = await fetch("/api/ai/itinerary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          destination: lockedDest.name,
+          startDate: trip.locked_start_date,
+          endDate: trip.locked_end_date,
+          memberCount: members.length,
+          budgetMin: budgetOverlap?.min || null,
+          budgetMax: budgetOverlap?.max || null,
+        }),
+      });
+      const data = await res.json();
+      if (data.days) {
+        setItinerary(data.days);
+      } else {
+        toast.error(data.error || "Failed to generate itinerary");
+      }
+    } catch {
+      toast.error("Failed to generate itinerary");
+    }
+    setAiLoading(false);
+  };
 
   if (trip.status === "planning" && destinations.length === 0) {
     return (
@@ -219,6 +268,75 @@ export default function SummaryTab({
               <span className="font-medium">Dates not marked:</span>{" "}
               {noDateMembers.map((m) => m.name.split(" ")[0]).join(", ")}
             </p>
+          )}
+        </div>
+      )}
+
+      {/* AI Itinerary Section */}
+      {canGenerateItinerary && (
+        <div className="space-y-4">
+          <div className="rounded-lg border border-purple-200 bg-purple-50 p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-sm font-semibold text-purple-800">
+                  AI Trip Itinerary
+                </h4>
+                <p className="text-xs text-purple-600 mt-0.5">
+                  Generate a day-by-day plan powered by Gemini AI
+                </p>
+              </div>
+              <button
+                onClick={handleGenerateItinerary}
+                disabled={aiLoading}
+                className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50 transition-colors flex items-center gap-1.5"
+              >
+                {aiLoading ? (
+                  <>
+                    <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    Generating...
+                  </>
+                ) : itinerary ? (
+                  <>Regenerate</>
+                ) : (
+                  <>✨ Generate Itinerary</>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Itinerary Display */}
+          {itinerary && (
+            <div className="space-y-3">
+              {itinerary.map((day) => (
+                <div
+                  key={day.day}
+                  className="rounded-lg border border-gray-200 bg-white overflow-hidden"
+                >
+                  <div className="bg-indigo-50 px-4 py-2.5 border-b border-indigo-100">
+                    <h5 className="text-sm font-semibold text-indigo-900">
+                      Day {day.day}: {day.title}
+                    </h5>
+                  </div>
+                  <div className="p-4 space-y-3">
+                    {day.activities.map((act, i) => (
+                      <div key={i} className="flex gap-3">
+                        <span className="shrink-0 text-xs font-medium text-indigo-600 bg-indigo-50 rounded px-2 py-1 h-fit">
+                          {act.time}
+                        </span>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">
+                            {act.activity}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            {act.description}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       )}
