@@ -1,8 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextRequest, NextResponse } from "next/server";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
-
 export async function POST(req: NextRequest) {
   try {
     if (!process.env.GEMINI_API_KEY) {
@@ -11,6 +9,8 @@ export async function POST(req: NextRequest) {
         { status: 500 }
       );
     }
+
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
     const { destination, startDate, endDate, memberCount, budgetMin, budgetMax } =
       await req.json();
@@ -49,21 +49,38 @@ Respond ONLY with valid JSON in this exact format, no markdown:
   ]
 }`;
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-    const result = await model.generateContent(prompt);
-    const text = result.response.text().trim();
+    // Try gemini-2.5-flash first, fall back to gemini-1.5-flash
+    const models = ["gemini-2.5-flash", "gemini-1.5-flash"];
+    let lastError: unknown = null;
 
-    // Parse JSON from response
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      return NextResponse.json(
-        { error: "Failed to parse AI response" },
-        { status: 500 }
-      );
+    for (const modelName of models) {
+      try {
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const result = await model.generateContent(prompt);
+        const text = result.response.text().trim();
+
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+          lastError = new Error("Failed to parse AI response");
+          continue;
+        }
+
+        const itinerary = JSON.parse(jsonMatch[0]);
+        return NextResponse.json(itinerary);
+      } catch (e) {
+        lastError = e;
+        console.error(`Model ${modelName} failed:`, e);
+        continue;
+      }
     }
 
-    const itinerary = JSON.parse(jsonMatch[0]);
-    return NextResponse.json(itinerary);
+    // If all models failed, return helpful error
+    const errorMessage =
+      lastError instanceof Error && lastError.message.includes("429")
+        ? "AI rate limit reached. Please wait a minute and try again."
+        : "Failed to generate itinerary. Please try again.";
+
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   } catch (error) {
     console.error("AI itinerary error:", error);
     return NextResponse.json(
