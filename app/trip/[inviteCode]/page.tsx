@@ -10,7 +10,7 @@ export default async function TripPage({
   const { inviteCode } = await params;
   const supabase = await createClient();
 
-  // Fetch trip by invite code
+  // Fetch trip by invite code (public — no auth needed)
   const { data: trip } = await supabase
     .from("trips")
     .select("*")
@@ -21,12 +21,12 @@ export default async function TripPage({
     redirect("/");
   }
 
-  // Get current user
+  // Get current user (may be null if not signed in)
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Fetch members
+  // Fetch members (public read)
   const { data: members } = await supabase
     .from("trip_members")
     .select("*")
@@ -35,7 +35,7 @@ export default async function TripPage({
 
   // Check if current user is a member
   const isMember = user
-    ? members?.some((m) => m.user_id === user.id)
+    ? members?.some((m) => m.user_id === user.id) ?? false
     : false;
 
   const isOrganizer = user ? trip.created_by === user.id : false;
@@ -59,10 +59,11 @@ export default async function TripPage({
       members={members || []}
       destinations={destinations || []}
       dateAvailability={dateAvailability || []}
-      isMember={isMember ?? false}
+      isMember={isMember}
       isOrganizer={isOrganizer}
       currentUserId={user?.id || null}
       inviteCode={inviteCode}
+      isSignedIn={!!user}
     />
   );
 }

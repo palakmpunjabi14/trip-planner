@@ -61,6 +61,7 @@ export default function TripPageClient({
   isOrganizer,
   currentUserId,
   inviteCode,
+  isSignedIn,
 }: {
   trip: Trip;
   members: Member[];
@@ -70,6 +71,7 @@ export default function TripPageClient({
   isOrganizer: boolean;
   currentUserId: string | null;
   inviteCode: string;
+  isSignedIn: boolean;
 }) {
   const supabase = createClient();
   const router = useRouter();
@@ -123,7 +125,7 @@ export default function TripPageClient({
   if (!isMember) {
     return (
       <div className="mx-auto max-w-lg px-4 py-16">
-        <JoinTripBanner tripId={trip.id} tripName={trip.name} />
+        <JoinTripBanner tripId={trip.id} tripName={trip.name} isSignedIn={isSignedIn} />
       </div>
     );
   }
