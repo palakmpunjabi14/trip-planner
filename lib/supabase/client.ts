@@ -8,9 +8,14 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 export const isSupabaseConfigured =
   supabaseUrl.startsWith("http") && supabaseKey.length > 0;
 
+let client: ReturnType<typeof createBrowserClient> | null = null;
+
 export function createClient() {
   if (!isSupabaseConfigured) {
-    return null;
+    throw new Error("Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.");
   }
-  return createBrowserClient(supabaseUrl, supabaseKey);
+  if (!client) {
+    client = createBrowserClient(supabaseUrl, supabaseKey);
+  }
+  return client;
 }
